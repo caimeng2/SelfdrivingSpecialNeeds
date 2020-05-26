@@ -208,7 +208,7 @@ DR2$emp[is.na(DR2$Q35) == TRUE] <- NA
 DR1$Q28 [DR1$Q28 == 3] <- NA
 DR1 <- DR1 %>% mutate(gender=case_when(Q28==1 ~0, Q28==2~1)) # code male to 0, female to 1
 
-DR2$Q28 [DR2$Q36 == 3] <- NA
+DR2$Q36 [DR2$Q36 == 3] <- NA
 DR2 <- DR2 %>% mutate(gender=case_when(Q36==1 ~0, Q36==2~1)) # code male to 0, female to 1
 ```
 
