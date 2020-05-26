@@ -5,6 +5,250 @@ date: "5/25/2020"
 output: html_document
 ---
 ```{r}
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(openxlsx)
+```
+#reading in data
+```{r}
+#DR
+Ionia <- read_csv("../data/dr/Ionia-DR Survey 2019_April 6, 2019_09.28.csv")
+Allegan <- read_csv("../data/dr/Allegan-DR Survey 2019_April 6, 2019_09.29.csv")
+Flint_DR <- read_csv("../data/dr/MTA Flint-DR Survey 2019_April 6, 2019_09.30.csv")
+Jackson_DR <- read_csv("../data/dr/JATA Jackson-DR Survey 2019_April 24, 2019_12.43.csv")
+Adrian <- read_csv("../data/dr/Adrian -DR Survey 2019_September 17, 2019_12.03.csv")
+Berrien <- read_csv("../data/dr/Berrien-DR Survey 2019_September 17, 2019_12.04.csv")
+Big_Rapids <- read_csv("../data/dr/Big Rapids - DR Survey 2019_September 17, 2019_12.05.csv")
+Caro <- read_csv("../data/dr/Caro -DR Survey 2019_September 17, 2019_12.05.csv")
+Charlevoix <- read_csv("../data/dr/Charlevoix - DR Survey 2019_September 17, 2019_12.06.csv")
+Clare <- read_csv("../data/dr/Clare -DR Survey 2019_September 17, 2019_12.06.csv")
+Crawford <- read_csv("../data/dr/Crawford-DR Survey 2019_September 17, 2019_12.07.csv")
+Greenville <- read_csv("../data/dr/Greenville -DR Survey 2019_September 17, 2019_12.08.csv")
+Hillsdale <- read_csv("../data/dr/Hillsdale-DR Survey 2019_September 17, 2019_12.09.csv")
+Kalkaska <- read_csv("../data/dr/Kalkaska -DR Survey 2019_September 17, 2019_12.11.csv")
+Macatawa <- read_csv("../data/dr/Macatawa -DR Survey 2019_September 17, 2019_12.11.csv")
+Midland <- read_csv("../data/dr/Midland -DR Survey 2019_September 17, 2019_12.13.csv")
+Niles <- read_csv("../data/dr/Niles-DR Survey 2019_September 17, 2019_12.14.csv")
+St_Joseph <- read_csv("../data/dr/St Joseph -DR Survey 2019_September 17, 2019_12.15.csv")
+Twin_Cities <- read_csv("../data/dr/Twin Cities -DR Survey 2019_September 17, 2019_12.16.csv")
+#---
+
 
 ```
+```{r}
+#FR
+Interurban_FR <- read_csv("../data/fr/Interurban -FR Survey 2019_September 20, 2019_14.44.csv")
+Jackson_FR <- read_csv("../data/fr/JATA Jackson-FR Survey 2019_September 20, 2019_14.45.csv")
+Macatawa_FR <- read_csv("../data/fr/Macatawa -FR Survey 2019_September 20, 2019_14.46.csv")
+Flint_FR <- read_csv("../data/fr/MTA Flint-FR Survey 2019_September 20, 2019_14.47.csv")
+Niles_FR <- read_csv("../data/fr/Niles-FR Survey 2019_September 20, 2019_14.48.csv")
+Twin_Cities_FR <- read_csv("../data/fr/Twin Cities -FR Survey 2019_September 20, 2019_14.49.csv")
+#---
 
+```
+#cleaning
+```{r}
+#remove Qualtrics headings
+Ionia <- Ionia [-c(1,2),]
+Allegan <- Allegan [-c(1,2),]
+Flint_DR <- Flint_DR [-c(1,2),]
+Jackson_DR <- Jackson_DR [-c(1,2),]
+Adrian <- Adrian [-c(1,2),]
+Berrien <- Berrien [-c(1,2),]
+Big_Rapids <- Big_Rapids [-c(1,2),]
+Caro <- Caro [-c(1,2),]
+Charlevoix <- Charlevoix [-c(1,2),]
+Clare <- Clare [-c(1,2),]
+Crawford <- Crawford [-c(1,2),]
+Greenville <- Greenville [-c(1,2),]
+Hillsdale <- Hillsdale [-c(1,2),]
+Kalkaska <- Kalkaska [-c(1,2),]
+Macatawa <- Macatawa [-c(1,2),]
+Midland <- Midland [-c(1,2),]
+Niles <- Niles [-c(1,2),]
+St_Joseph <- St_Joseph [-c(1,2),]
+Twin_Cities <- Twin_Cities [-c(1,2),]
+
+#combine the first part of DR into one
+DR1 <- bind_rows(Ionia, Allegan, Flint_DR, Jackson_DR, Adrian, Berrien, Big_Rapids, Caro, Charlevoix, Clare, Crawford, Greenville, Hillsdale, Kalkaska, Macatawa, Midland, Niles, St_Joseph, Twin_Cities) %>% select(Q17, Q18, Q19, Q22, Q25, Q26, Q34, Q35, Q36, Q27, Q28, Q29, Q30, Q31, Q32, Q32_12_TEXT, Q33)
+#write.xlsx(DR1, file = "DR1.xlsx")
+```
+
+##helpful
+```{r}
+#helpfulness of the driver: 1=very dissatisfied, 5= very satisfied
+DR1$Q17[DR1$Q17 == 6] <- NA
+DR1 <- DR1 %>% mutate(helpful=as.numeric(Q17))
+DR1$helpful <- recode(DR1$helpful, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+```
+
+##prof
+```{r}
+#professionalism of the driver: 1=very dissatisfied, 5= very satisfied
+DR1$Q18[DR1$Q18 == 6] <- NA
+DR1 <- DR1 %>% mutate(prof=as.numeric(Q18))
+DR1$prof <- recode(DR1$prof, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+```
+
+##skill
+```{r}
+#driving skill of the driver: 1=very dissatisfied, 5= very satisfied
+DR1$Q19[DR1$Q19 == 6] <- NA
+DR1 <- DR1 %>% mutate(skill=as.numeric(Q19))
+DR1$skill <- recode(DR1$skill, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+```
+
+##service
+```{r}
+#driving skill of the driver: 1=very dissatisfied, 5= very satisfied
+DR1$Q22[DR1$Q22 == 6] <- NA
+DR1 <- DR1 %>% mutate(service=as.numeric(Q22))
+DR1$service <- recode(DR1$service, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+```
+
+##med
+```{r}
+#medical purpose: 1=yes, 0=no
+#Q25 multiple selection
+DR1 <- DR1 %>% mutate(med = ifelse(grepl("2", Q25), 1, 0)) # code "medical" to 1, else 0
+DR1$med[is.na(DR1$Q25) == TRUE] <- NA
+```
+
+##alt
+```{r}
+#alternative means: 1=yes, 0=no
+#Q26 multiple selection
+DR1 <- DR1 %>% mutate(alt = ifelse(grepl("1", Q26), 0, 1)) # code "not make this trip" to 0, else 1
+DR1$alt[is.na(DR1$Q26) == TRUE] <- NA
+```
+
+##feel
+```{r}
+#how do you feel about AVs
+DR1 <- DR1 %>% mutate(feel=Q34)
+```
+
+##wtr
+```{r}
+#willingness to ride: 1= yes, 0=no
+DR1 <- DR1 %>% mutate(wtr=case_when(Q35==1 ~1, Q35==2~0)) # code "no" from 2 to 0
+```
+
+##concern
+```{r}
+#if not willing, what would be the main concerns
+DR1 <- DR1 %>% mutate(concern=Q36)
+```
+
+##emp
+```{r}
+#employment: 1=in the labor force, 0=not in the labor force
+DR1 <- DR1 %>% mutate(emp = ifelse(Q27 < 3, 1, 0)) # code "employed for pay" and "self-employed" to 1, else 0
+DR1$emp[is.na(DR1$Q27) == TRUE] <- NA
+```
+
+##gender
+```{r}
+#gender: 0=male, 1=female
+DR1$Q28 [DR1$Q28 == 3] <- NA
+DR1 <- DR1 %>% mutate(gender=case_when(Q28==1 ~0, Q28==2~1)) # code male to 0, female to 1
+```
+
+##age
+```{r}
+DR1 <- DR1 %>% mutate(age=as.numeric(Q29))
+```
+
+##income
+```{r}
+DR1 <- DR1 %>% mutate(income=as.numeric(Q30))
+```
+
+##race & racecat
+```{r}
+#race: 1=black, 2=asian, 3=white, 4=hispanic, 5=native american, 6=pacific islander, 7=other
+#racecat: 1=black, 3=white, 4=hispanic, 7=other
+DR1 <- DR1 %>% mutate(race=factor(Q31))
+DR1 <- DR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
+```
+
+##accom
+```{r}
+#special needs: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(accom = ifelse(Q32==7, 0, 1)) # code only select "no special needs" to 0, else 1
+DR1$accom[is.na(DR1$Q32) == TRUE] <- NA
+```
+
+##blind
+```{r}
+#blindness: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(blind = ifelse(grepl("8", Q32), 1, 0)) # code "blindness/ visual impairment" to 1, else 0
+DR1$blind[is.na(DR1$Q32) == TRUE] <- NA
+```
+
+##deaf
+```{r}
+#deaf: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(deaf = ifelse(grepl("9", Q32), 1, 0)) # code "deaf/hard of hearing" to 1, else 0
+DR1$deaf[is.na(DR1$Q32) == TRUE] <- NA
+```
+
+##mobility
+```{r}
+#mobility disability: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(mobility = ifelse(grepl("10", Q32), 1, 0)) # code "mobility disabilities" to 1, else 0
+DR1$mobility[is.na(DR1$Q32) == TRUE] <- NA
+```
+
+##psy
+```{r}
+#psychiatric disability: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(psy = ifelse(grepl("11", Q32), 1, 0)) # code "psychiatric disabilities" to 1, else 0
+DR1$psy[is.na(DR1$Q32) == TRUE] <- NA
+```
+##otherdis
+```{r}
+#other disability: 1=yes, 0=no
+DR1 <- DR1 %>% mutate(otherdis = ifelse(grepl("12", Q32), 1, 0)) # code "other disabilities" to 1, else 0
+DR1$otherdis[is.na(DR1$Q32) == TRUE] <- NA
+```
+```{r}
+#examine other disability
+#DR1 %>% group_by(Q32_12_TEXT) %>% count()
+```
+```{r}
+DR1$mobility[DR1$Q32_12_TEXT=="Cane"] <- 1
+DR1$otherdis[DR1$Q32_12_TEXT=="Cane"] <- 0
+DR1$mobility[DR1$Q32_12_TEXT=="for 1 month was using a walker"] <- 1
+DR1$otherdis[DR1$Q32_12_TEXT=="for 1 month was using a walker"] <- 0
+DR1$accom[DR1$Q32_12_TEXT=="I don't require any accommodations"] <- 0
+DR1$otherdis[DR1$Q32_12_TEXT=="I don't require any accommodations"] <- 0
+DR1$mobility[DR1$Q32_12_TEXT=="Lift on occasion"] <- 1
+DR1$otherdis[DR1$Q32_12_TEXT=="Lift on occasion"] <- 0
+DR1$mobility[DR1$Q32_12_TEXT=="Mobility"] <- 1
+DR1$otherdis[DR1$Q32_12_TEXT=="Mobility"] <- 0
+DR1$accom[DR1$Q32_12_TEXT=="No"] <- 0
+DR1$otherdis[DR1$Q32_12_TEXT=="No"] <- 0
+DR1$accom[DR1$Q32_12_TEXT=="none"] <- 0
+DR1$otherdis[DR1$Q32_12_TEXT=="none"] <- 0
+DR1$accom[DR1$Q32_12_TEXT=="None"] <- 0
+DR1$otherdis[DR1$Q32_12_TEXT=="None"] <- 0
+DR1$mobility[DR1$Q32_12_TEXT=="wheelchaie"] <- 1
+DR1$otherdis[DR1$Q32_12_TEXT=="wheelchaie"] <- 0
+```
+##comment
+```{r}
+#any other comments about the transportation service
+DR1 <- DR1 %>% mutate(comment=Q33)
+```
+```{r}
+#dr1 is the cleaned version of DR1
+dr1 <- DR1 %>% select(helpful, prof, skill, service, med, alt, feel, wtr, concern, emp, gender, age, income, race, racecat, accom, blind, deaf, mobility, psy, otherdis, comment)
+dr1 <- dr1[rowSums(is.na(dr1)) != ncol(dr1), ] # remove rows if all NA
+```
+
+
+```{r}
+DR1 %>% group_by(otherdis) %>% count()
+```
