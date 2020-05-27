@@ -445,12 +445,6 @@ fr <- FR1 %>% select(helpful, prof, skill, service, work, med, alt, feel, wtr, c
 fr <- fr[rowSums(is.na(fr)) != ncol(fr), ] # remove rows if all NA
 fr <- fr %>% mutate(type="FR")
 ```
-```{r}
-print(colSums(!is.na(dr)))
-```
-```{r}
-print(colSums(!is.na(fr)))
-```
 
 ```{r}
 all <- bind_rows(dr, fr)
@@ -460,8 +454,13 @@ all <- bind_rows(dr, fr)
 ```{r}
 #d<- all %>% drop_na(wtr)
 d <- all[!(is.na(all$wtr)==TRUE&is.na(all$feel)==TRUE),] # remove rows if both wtr and feel (dependent v.) are NA
-glimpse(d)
+#glimpse(d)
 #write.xlsx(d, file = "av_special_needs.xlsx")
+```
+
+#descriptives
+```{r}
+print(colSums(!is.na(d)))
 ```
 
 ```{r}
