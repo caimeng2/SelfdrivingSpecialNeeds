@@ -10,6 +10,7 @@ library(tidyverse)
 library(ggplot2)
 library(openxlsx)
 ```
+
 #reading in data
 ```{r}
 #DR
@@ -39,8 +40,7 @@ Belding <- read_csv("../data/dr/Belding-DR+Survey_May+26,+2020_14.12.csv")
 Clinton <- read_csv("../data/dr/Clinton+Area-DR+Survey+2019_May+26,+2020_14.17.csv")
 Alma <- read_csv("../data/dr/Alma-DR+Survey_May+26,+2020_14.30.csv")
 Eaton <- read_csv("../data/dr/Eaton+County-DR+Survey_May+26,+2020_14.36.csv")
-```
-```{r}
+
 #FR
 Interurban_FR <- read_csv("../data/fr/Interurban -FR Survey 2019_September 20, 2019_14.44.csv")
 Jackson_FR <- read_csv("../data/fr/JATA Jackson-FR Survey 2019_September 20, 2019_14.45.csv")
@@ -49,7 +49,7 @@ Flint_FR <- read_csv("../data/fr/MTA Flint-FR Survey 2019_September 20, 2019_14.
 Niles_FR <- read_csv("../data/fr/Niles-FR Survey 2019_September 20, 2019_14.48.csv")
 Twin_Cities_FR <- read_csv("../data/fr/Twin Cities -FR Survey 2019_September 20, 2019_14.49.csv")
 #---
-
+Isabella_FR <- read_csv("../data/fr/Isabella-FR+Survey_May+27,+2020_11.57.csv")
 ```
 #cleaning
 ```{r}
@@ -79,12 +79,25 @@ Belding <- Belding[-c(1,2),]
 Clinton <- Clinton[-c(1,2),]
 Alma <- Alma[-c(1,2),]
 Eaton <- Eaton[-c(1,2),]
+#---
+Interurban_FR <- Interurban_FR[-c(1,2),]
+Jackson_FR <- Jackson_FR[-c(1,2),]
+Macatawa_FR <- Macatawa_FR[-c(1,2),]
+Flint_FR <- Flint_FR[-c(1,2),]
+Niles_FR <- Niles_FR[-c(1,2),]
+Twin_Cities_FR <- Twin_Cities_FR[-c(1,2),]
+Isabella_FR <- Isabella_FR[-c(1,2),]
 
 #combine the first part of DR (with same formatting) into one
 DR1 <- bind_rows(Ionia, Allegan, Flint_DR, Jackson_DR, Adrian, Berrien, Big_Rapids, Caro, Charlevoix, Clare, Crawford, Greenville, Hillsdale, Kalkaska, Macatawa, Midland, Niles, St_Joseph, Twin_Cities, Marshall, Belding, Clinton, Alma, Eaton) %>% select(Q17, Q18, Q19, Q22, Q25, Q26, Q34, Q35, Q36, Q27, Q28, Q29, Q30, Q31, Q32, Q32_12_TEXT, Q33)
+#write.xlsx(DR1, file = "DR1.xlsx")
+
 #Isabella_DR's question numbers were different from DR1
 DR2 <- Isabella_DR %>% select(Q17, Q18, Q19, Q22, Q25, Q26, Q32, Q33, Q34, Q35, Q36, Q37, Q38, Q39, Q40, Q40_12_TEXT, Q41)
-#write.xlsx(DR1, file = "DR1.xlsx")
+
+#combine all FR into one
+FR1 <- bind_rows(Interurban_FR, Jackson_FR, Macatawa_FR, Flint_FR, Niles_FR, Twin_Cities_FR, Isabella_FR) %>% select(Q15, Q16, Q17, Q18, Q21, Q22, Q31,Q32,Q33,Q23,Q24,Q25,Q26,Q27,Q28,Q28_6_TEXT,Q29)
+#write.xlsx(FR1, file = "FR.xlsx")
 ```
 
 ##helpful
@@ -97,6 +110,11 @@ DR1$helpful <- recode(DR1$helpful, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 DR2$Q17[DR2$Q17 == 6] <- NA
 DR2 <- DR2 %>% mutate(helpful=as.numeric(Q17))
 DR2$helpful <- recode(DR2$helpful, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+
+FR1$Q15[FR1$Q15 == 6] <- NA
+FR1 <- FR1 %>% mutate(helpful=as.numeric(Q15))
+FR1$helpful <- recode(FR1$helpful, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+
 ```
 
 ##prof
@@ -109,6 +127,10 @@ DR1$prof <- recode(DR1$prof, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 DR2$Q18[DR2$Q18 == 6] <- NA
 DR2 <- DR2 %>% mutate(prof=as.numeric(Q18))
 DR2$prof <- recode(DR2$prof, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+
+FR1$Q16[FR1$Q16 == 6] <- NA
+FR1 <- FR1 %>% mutate(prof=as.numeric(Q16))
+FR1$prof <- recode(FR1$prof, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 ```
 
 ##skill
@@ -121,6 +143,10 @@ DR1$skill <- recode(DR1$skill, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 DR2$Q19[DR2$Q19 == 6] <- NA
 DR2 <- DR2 %>% mutate(skill=as.numeric(Q19))
 DR2$skill <- recode(DR2$skill, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+
+FR1$Q17[FR1$Q17 == 6] <- NA
+FR1 <- FR1 %>% mutate(skill=as.numeric(Q17))
+FR1$skill <- recode(FR1$skill, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 ```
 
 ##service
@@ -133,6 +159,10 @@ DR1$service <- recode(DR1$service, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 DR2$Q22[DR2$Q22 == 6] <- NA
 DR2 <- DR2 %>% mutate(service=as.numeric(Q22))
 DR2$service <- recode(DR2$service, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
+
+FR1$Q18[FR1$Q18 == 6] <- NA
+FR1 <- FR1 %>% mutate(service=as.numeric(Q18))
+FR1$service <- recode(FR1$service, `1`=5, `2`=4, `3`=3, `4`=2, `5`=1)
 ```
 
 ##work
@@ -144,6 +174,9 @@ DR1$work[is.na(DR1$Q25) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(work = ifelse(grepl("1", Q25), 1, 0)) # code "work" to 1, else 0
 DR2$work[is.na(DR2$Q25) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(work = ifelse(grepl("1", Q21), 1, 0)) # code "work" to 1, else 0
+FR1$work[is.na(FR1$Q21) == TRUE] <- NA
 ```
 
 ##med
@@ -155,6 +188,9 @@ DR1$med[is.na(DR1$Q25) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(med = ifelse(grepl("2", Q25), 1, 0)) # code "medical" to 1, else 0
 DR2$med[is.na(DR2$Q25) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(med = ifelse(grepl("2", Q21), 1, 0)) # code "medical" to 1, else 0
+FR1$med[is.na(FR1$Q21) == TRUE] <- NA
 ```
 
 ##alt
@@ -166,6 +202,9 @@ DR1$alt[is.na(DR1$Q26) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(alt = ifelse(grepl("1", Q26), 0, 1)) # code "not make this trip" to 0, else 1
 DR2$alt[is.na(DR2$Q26) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(alt = ifelse(grepl("1", Q22), 0, 1)) # code "not make this trip" to 0, else 1
+FR1$alt[is.na(FR1$Q22) == TRUE] <- NA
 ```
 
 ##feel
@@ -174,6 +213,8 @@ DR2$alt[is.na(DR2$Q26) == TRUE] <- NA
 DR1 <- DR1 %>% mutate(feel=Q34)
 
 DR2 <- DR2 %>% mutate(feel=Q32)
+
+FR1 <- FR1 %>% mutate(feel=Q31)
 ```
 
 ##wtr
@@ -182,6 +223,8 @@ DR2 <- DR2 %>% mutate(feel=Q32)
 DR1 <- DR1 %>% mutate(wtr=case_when(Q35==1 ~1, Q35==2~0)) # code "no" from 2 to 0
 
 DR2 <- DR2 %>% mutate(wtr=case_when(Q33==1 ~1, Q35==2~0)) # code "no" from 2 to 0
+
+FR1 <- FR1 %>% mutate(wtr=case_when(Q32==1 ~1, Q32==4~0)) # code "no" from 4 to 0
 ```
 
 ##concern
@@ -190,6 +233,8 @@ DR2 <- DR2 %>% mutate(wtr=case_when(Q33==1 ~1, Q35==2~0)) # code "no" from 2 to 
 DR1 <- DR1 %>% mutate(concern=Q36)
 
 DR2 <- DR2 %>% mutate(concern=Q34)
+
+FR1 <- FR1 %>% mutate(concern=Q33)
 ```
 
 ##emp
@@ -200,6 +245,9 @@ DR1$emp[is.na(DR1$Q27) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(emp = ifelse(Q35 < 3, 1, 0)) # code "employed for pay" and "self-employed" to 1, else 0
 DR2$emp[is.na(DR2$Q35) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(emp = ifelse(Q23 < 3, 1, 0)) # code "employed for pay" and "self-employed" to 1, else 0
+FR1$emp[is.na(FR1$Q23) == TRUE] <- NA
 ```
 
 ##gender
@@ -210,6 +258,9 @@ DR1 <- DR1 %>% mutate(gender=case_when(Q28==1 ~0, Q28==2~1)) # code male to 0, f
 
 DR2$Q36 [DR2$Q36 == 3] <- NA
 DR2 <- DR2 %>% mutate(gender=case_when(Q36==1 ~0, Q36==2~1)) # code male to 0, female to 1
+
+FR1$Q24 [FR1$Q24 == 3] <- NA
+FR1 <- FR1 %>% mutate(gender=case_when(Q24==1 ~0, Q24==2~1)) # code male to 0, female to 1
 ```
 
 ##age
@@ -219,6 +270,10 @@ DR1$age[DR1$age == 8] <- 3 # recode "45 to 54" from 8 to 3("35-54")
 
 DR2 <- DR2 %>% mutate(age=as.numeric(Q37))
 DR2$age[DR2$age == 8] <- 3 # recode "45 to 54" from 8 to 3("35-54")
+
+FR1 <- FR1 %>% mutate(age=as.numeric(Q25))
+FR1$age[FR1$age == 14] <- 7 # recode "85 and older" from 14 to 7
+FR1$age[FR1$age == 8] <- 3 # recode "45 to 54" from 8 to 3("35-54")
 ```
 
 ##income
@@ -226,17 +281,22 @@ DR2$age[DR2$age == 8] <- 3 # recode "45 to 54" from 8 to 3("35-54")
 DR1 <- DR1 %>% mutate(income=as.numeric(Q30))
 
 DR2 <- DR2 %>% mutate(income=as.numeric(Q38))
+
+FR1 <- FR1 %>% mutate(income=as.numeric(Q26))
 ```
 
 ##race & racecat
 ```{r}
 #race: 1=black, 2=asian, 3=white, 4=hispanic, 5=native american, 6=pacific islander, 7=other
 #racecat: 1=black, 3=white, 4=hispanic, 7=other
-DR1 <- DR1 %>% mutate(race=factor(Q31))
+DR1 <- DR1 %>% mutate(race=as.numeric(Q31))
 DR1 <- DR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
 
-DR2 <- DR2 %>% mutate(race=factor(Q39))
+DR2 <- DR2 %>% mutate(race=as.numeric(Q39))
 DR2 <- DR2 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
+
+FR1 <- FR1 %>% mutate(race=as.numeric(Q27))
+FR1 <- FR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
 ```
 
 ##accom
@@ -247,6 +307,9 @@ DR1$accom[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(accom = ifelse(Q40==7, 0, 1)) # code only select "no special needs" to 0, else 1
 DR2$accom[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(accom = ifelse(Q28==1, 0, 1)) # code only select "no special needs" to 0, else 1
+FR1$accom[is.na(FR1$Q28) == TRUE] <- NA
 ```
 
 ##blind
@@ -257,6 +320,9 @@ DR1$blind[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(blind = ifelse(grepl("8", Q40), 1, 0)) # code "blindness/ visual impairment" to 1, else 0
 DR2$blind[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(blind = ifelse(grepl("2", Q28), 1, 0)) # code "blindness/ visual impairment" to 1, else 0
+FR1$blind[is.na(FR1$Q28) == TRUE] <- NA
 ```
 
 ##deaf
@@ -267,6 +333,9 @@ DR1$deaf[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(deaf = ifelse(grepl("9", Q40), 1, 0)) # code "deaf/hard of hearing" to 1, else 0
 DR2$deaf[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(deaf = ifelse(grepl("3", Q28), 1, 0)) # code "deaf/hard of hearing" to 1, else 0
+FR1$deaf[is.na(FR1$Q28) == TRUE] <- NA
 ```
 
 ##mobility
@@ -277,6 +346,9 @@ DR1$mobility[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(mobility = ifelse(grepl("10", Q40), 1, 0)) # code "mobility disabilities" to 1, else 0
 DR2$mobility[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(mobility = ifelse(grepl("4", Q28), 1, 0)) # code "mobility disabilities" to 1, else 0
+FR1$mobility[is.na(FR1$Q28) == TRUE] <- NA
 ```
 
 ##psy
@@ -287,6 +359,9 @@ DR1$psy[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(psy = ifelse(grepl("11", Q40), 1, 0)) # code "psychiatric disabilities" to 1, else 0
 DR2$psy[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(psy = ifelse(grepl("5", Q28), 1, 0)) # code "psychiatric disabilities" to 1, else 0
+FR1$psy[is.na(FR1$Q28) == TRUE] <- NA
 ```
 ##otherdis
 ```{r}
@@ -296,13 +371,18 @@ DR1$otherdis[is.na(DR1$Q32) == TRUE] <- NA
 
 DR2 <- DR2 %>% mutate(otherdis = ifelse(grepl("12", Q40), 1, 0)) # code "other disabilities" to 1, else 0
 DR2$otherdis[is.na(DR2$Q40) == TRUE] <- NA
+
+FR1 <- FR1 %>% mutate(otherdis = ifelse(grepl("6", Q28), 1, 0)) # code "other disabilities" to 1, else 0
+FR1$otherdis[is.na(FR1$Q28) == TRUE] <- NA
 ```
 ```{r}
 #examine other disability
 #DR1 %>% group_by(Q32_12_TEXT) %>% count()
 #DR2 %>% group_by(Q40_12_TEXT) %>% count()
+#FR1 %>% group_by(Q28_6_TEXT) %>% count()
 ```
 ```{r}
+#manually code "other"
 DR1$mobility[DR1$Q32_12_TEXT=="Cane"] <- 1
 DR1$otherdis[DR1$Q32_12_TEXT=="Cane"] <- 0
 DR1$mobility[DR1$Q32_12_TEXT=="for 1 month was using a walker"] <- 1
@@ -321,8 +401,26 @@ DR1$accom[DR1$Q32_12_TEXT=="None"] <- 0
 DR1$otherdis[DR1$Q32_12_TEXT=="None"] <- 0
 DR1$mobility[DR1$Q32_12_TEXT=="wheelchaie"] <- 1
 DR1$otherdis[DR1$Q32_12_TEXT=="wheelchaie"] <- 0
+
 DR2$mobility[DR2$Q40_12_TEXT=="use walker and wagon"] <- 1
 DR2$otherdis[DR2$Q40_12_TEXT=="use walker and wagon"] <- 0
+
+FR1$accom[FR1$Q28_6_TEXT=="N/A"] <- 0
+FR1$otherdis[FR1$Q28_6_TEXT=="N/A"] <- 0
+FR1$accom[FR1$Q28_6_TEXT=="none"] <- 0
+FR1$otherdis[FR1$Q28_6_TEXT=="none"] <- 0
+FR1$accom[FR1$Q28_6_TEXT=="None"] <- 0
+FR1$otherdis[FR1$Q28_6_TEXT=="None"] <- 0
+FR1$psy[FR1$Q28_6_TEXT=="Psychdisabilities"] <- 1
+FR1$otherdis[FR1$Q28_6_TEXT=="Psychdisabilities"] <- 0
+FR1$mobility[FR1$Q28_6_TEXT=="Walker"] <- 1
+FR1$otherdis[FR1$Q28_6_TEXT=="Walker"] <- 0
+FR1$mobility[FR1$Q28_6_TEXT=="Walking cane"] <- 1
+FR1$otherdis[FR1$Q28_6_TEXT=="Walking cane"] <- 0
+FR1$mobility[FR1$Q28_6_TEXT=="walking disability"] <- 1
+FR1$otherdis[FR1$Q28_6_TEXT=="walking disability"] <- 0
+FR1$mobility[FR1$Q28_6_TEXT=="Wheelchair"] <- 1
+FR1$otherdis[FR1$Q28_6_TEXT=="Wheelchair"] <- 0
 ```
 ##comment
 ```{r}
@@ -330,12 +428,45 @@ DR2$otherdis[DR2$Q40_12_TEXT=="use walker and wagon"] <- 0
 DR1 <- DR1 %>% mutate(comment=Q33)
 
 DR2 <- DR2 %>% mutate(comment=Q41)
+
+FR1 <- FR1 %>% mutate(comment=Q29)
 ```
 ```{r}
-#dr1/dr2 is the cleaned version of DR1/DR2
+#cleaned version
 dr1 <- DR1 %>% select(helpful, prof, skill, service, work, med, alt, feel, wtr, concern, emp, gender, age, income, race, racecat, accom, blind, deaf, mobility, psy, otherdis, comment)
-dr2 <- DR2 %>% select(helpful, prof, skill, service, work, med, alt, feel, wtr, concern, emp, gender, age, income, race, racecat, accom, blind, deaf, mobility, psy, otherdis, comment)
 dr1 <- dr1[rowSums(is.na(dr1)) != ncol(dr1), ] # remove rows if all NA
-dr2 <- dr2[rowSums(is.na(dr2)) != ncol(dr2), ]
-dr <- bind_rows(dr1, dr2) # combine dr1 and dr2 into dr
+
+dr2 <- DR2 %>% select(helpful, prof, skill, service, work, med, alt, feel, wtr, concern, emp, gender, age, income, race, racecat, accom, blind, deaf, mobility, psy, otherdis, comment)
+dr2 <- dr2[rowSums(is.na(dr2)) != ncol(dr2), ] # remove rows if all NA
+
+dr <- bind_rows(dr1, dr2) %>% mutate(type ="DR") # combine dr1 and dr2 into dr
+
+fr <- FR1 %>% select(helpful, prof, skill, service, work, med, alt, feel, wtr, concern, emp, gender, age, income, race, racecat, accom, blind, deaf, mobility, psy, otherdis, comment)
+fr <- fr[rowSums(is.na(fr)) != ncol(fr), ] # remove rows if all NA
+fr <- fr %>% mutate(type="FR")
 ```
+```{r}
+print(colSums(!is.na(dr)))
+```
+```{r}
+print(colSums(!is.na(fr)))
+```
+
+```{r}
+all <- bind_rows(dr, fr)
+#glimpse(all)
+```
+
+```{r}
+#d<- all %>% drop_na(wtr)
+d <- all[!(is.na(all$wtr)==TRUE&is.na(all$feel)==TRUE),] # remove rows if both wtr and feel (dependent v.) are NA
+glimpse(d)
+#write.xlsx(d, file = "av_special_needs.xlsx")
+```
+
+```{r}
+mcfadden <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); as.vector(1-(LLf/LL0))}
+coxsnell <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector(1 - exp((2/N) * (LL0 - LLf)))}
+nagelkerke <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector((1 - exp((2/N) * (LL0 - LLf))) / (1 - exp(LL0)^(2/N)))}
+```
+
