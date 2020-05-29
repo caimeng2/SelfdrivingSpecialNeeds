@@ -265,6 +265,7 @@ FR1 <- FR1 %>% mutate(gender=case_when(Q24==1 ~0, Q24==2~1)) # code male to 0, f
 
 ##age
 ```{r}
+#age:1=18-24, 2=25=34, 3=35-54, 4=55-64, 5=65-74, 6=75-84, 7=85 and older
 DR1 <- DR1 %>% mutate(age=as.numeric(Q29))
 DR1$age[DR1$age == 8] <- 3 # recode "45 to 54" from 8 to 3("35-54")
 
@@ -375,6 +376,7 @@ DR2$otherdis[is.na(DR2$Q40) == TRUE] <- NA
 FR1 <- FR1 %>% mutate(otherdis = ifelse(grepl("6", Q28), 1, 0)) # code "other disabilities" to 1, else 0
 FR1$otherdis[is.na(FR1$Q28) == TRUE] <- NA
 ```
+
 ```{r}
 #examine other disability
 #DR1 %>% group_by(Q32_12_TEXT) %>% count()
@@ -458,14 +460,47 @@ d <- all[!(is.na(all$wtr)==TRUE&is.na(all$feel)==TRUE),] # remove rows if both w
 #write.xlsx(d, file = "av_special_needs.xlsx")
 ```
 
+##dis
+```{r}
+#disability combined: 1=no special needs, 2= blind only, 3=deaf only, 4=mobility only, 5= psychiatric only, 6= otherdisability only, 7= more than one disability
+d <- d %>% mutate(dis=case_when(accom==0~1, blind==1&deaf==0&mobility==0&psy==0&otherdis==0~2, blind==0&deaf==1&mobility==0&psy==0&otherdis==0~3, blind==0&deaf==0&mobility==1&psy==0&otherdis==0~4, blind==0&deaf==0&mobility==0&psy==1&otherdis==0~5, blind==0&deaf==0&mobility==0&psy==0&otherdis==1~6))
+d$dis[is.na(d$dis)==TRUE] <- 7 #code both NA and multi-disability to 7
+d$dis[is.na(d$accom) == TRUE] <- NA # code NA to NA so 7=multi-disability
+```
+```{r}
+#write.xlsx(d, file = "av_special_needs_withdis.xlsx")
+```
+
 #descriptives
 ```{r}
 print(colSums(!is.na(d)))
 ```
+```{r}
+d %>% group_by(type) %>% count()
+```
+
 
 ```{r}
 mcfadden <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); as.vector(1-(LLf/LL0))}
 coxsnell <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector(1 - exp((2/N) * (LL0 - LLf)))}
 nagelkerke <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector((1 - exp((2/N) * (LL0 - LLf))) / (1 - exp(LL0)^(2/N)))}
 ```
+```{r}
+# control for demographics, helpful, prof, skill, service, med, work, alt
+summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis)+alt, data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+```
+```{r}
+# demographics only
+summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+```
 
+```{r}
+# demographics only
+summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+ as.factor(blind)+as.factor(deaf)+ as.factor(mobility)+as.factor(psy)+as.factor(otherdis), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+```
+```{r}
+summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis)+as.factor(alt), data = d, family = binomial(logit)))
+```
