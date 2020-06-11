@@ -9,6 +9,7 @@ library(readr)
 library(tidyverse)
 library(ggplot2)
 library(openxlsx)
+library(MASS)
 ```
 
 #reading in data
@@ -467,10 +468,59 @@ d <- d %>% mutate(dis=case_when(accom==0~1, blind==1&deaf==0&mobility==0&psy==0&
 d$dis[is.na(d$dis)==TRUE] <- 7 #code both NA and multi-disability to 7
 d$dis[is.na(d$accom) == TRUE] <- NA # code NA to NA so 7=multi-disability
 ```
+##senior
+```{r}
+#senior: 1= yes, 0=no
+d <- d %>% mutate(senior=case_when(age<5~0, age>=5~1)) # code 65 and older as seniors
+```
+##medrely
+```{r}
+#rely on PT for med: 1= yes, 0=no
+d <- d %>% mutate(medrely=ifelse(med==1&alt==0, 1, 0))
+d$medrely[is.na(d$med) == TRUE] <- NA
+d$medrely[is.na(d$alt) == TRUE] <- NA
+```
+
+##workrely
+```{r}
+#rely on PT for work: 1= yes, 0=no
+d <- d %>% mutate(workrely=ifelse(work==1&alt==0, 1, 0))
+d$medrely[is.na(d$work) == TRUE] <- NA
+d$medrely[is.na(d$alt) == TRUE] <- NA
+```
 ```{r}
 #write.xlsx(d, file = "av_special_needs_withdis.xlsx")
 ```
+#------------
+#open-ends coding
 
+```{r}
+d$index <- seq.int(nrow(d)) # add index to master sheet
+openend <- read_csv("av_special_needs_openends_coded.csv")
+d <- left_join(d, openend)
+```
+
+##feel_senti
+```{r}
+#feel: 1= negative, 2=nutural, 3=positive
+d <- d %>% mutate(feel_senti=case_when(feel_code_td==1~1, feel_code_td==2~1, feel_code_td==3~1,feel_code_td==4~1, feel_code_td==5~2,feel_code_td==6~3, feel_code_td==7~3, feel_code_td==0~0)) 
+d$feel_senti[d$feel_senti==0] <- NA
+d %>% group_by(feel_senti) %>% count()
+```
+##concern_human
+```{r}
+#not willing to ride because of prefer human driver
+d <- d %>% mutate(concern_human=ifelse(concern_code_more==6, 1, 0)) 
+d$concern_human[is.na(d$concern_code_more) == TRUE] <- NA
+#altenatively code: Cost Concerns, job loss, lack of human interaction, societal impact, etc
+#d <- d %>% mutate(concern_human=ifelse(concern_code_td==4, 1, 0)) 
+#d$concern_human[is.na(d$concern_code_td) == TRUE] <- NA
+```
+```{r}
+d %>% group_by(concern_human) %>% count()
+```
+
+#------------
 #descriptives
 ```{r}
 print(colSums(!is.na(d)))
@@ -479,6 +529,38 @@ print(colSums(!is.na(d)))
 d %>% group_by(type) %>% count()
 ```
 
+```{r}
+varde<- function(data,variable){
+  data %>% filter(!is.na({{variable}})) %>% group_by({{variable}}) %>% summarise(n=n()) %>% mutate(freq=round((n/sum(n)*100),2))
+  }
+```
+```{r}
+varde(d, gender)
+```
+```{r}
+varde(d, age)
+```
+```{r}
+varde(d, income)
+```
+
+```{r}
+varde(d, emp)
+```
+```{r}
+varde(d, race)
+```
+```{r}
+varde(d, dis)
+```
+```{r}
+varde(d, medrely)
+```
+```{r}
+varde(d, workrely)
+```
+#------------
+#stats
 
 ```{r}
 mcfadden <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); as.vector(1-(LLf/LL0))}
@@ -486,7 +568,7 @@ coxsnell <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- l
 nagelkerke <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector((1 - exp((2/N) * (LL0 - LLf))) / (1 - exp(LL0)^(2/N)))}
 ```
 ```{r}
-# control for demographics, helpful, prof, skill, service, med, work, alt
+# control for demographics, test helpful, prof, skill, service, med, work, alt
 summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis)+alt, data = d, family = binomial(logit)))
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 ```
@@ -497,10 +579,106 @@ list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(m
 ```
 
 ```{r}
-# demographics only
-summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+ as.factor(blind)+as.factor(deaf)+ as.factor(mobility)+as.factor(psy)+as.factor(otherdis), data = d, family = binomial(logit)))
+# demographics only (seperate disabilities)
+summary(model <- glm(wtr ~ as.factor(gender)+senior+income+as.factor(emp)+as.factor(racecat)+ as.factor(blind)+as.factor(deaf)+ as.factor(mobility)+as.factor(psy)+as.factor(otherdis), data = d, family = binomial(logit)))
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 ```
+
 ```{r}
-summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis)+as.factor(alt), data = d, family = binomial(logit)))
+# disability & helpful interaction: nothing
+summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+ as.factor(dis)*helpful, data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+```
+
+```{r}
+# replace age with senior
+# senior & helpful interaction: nothing
+summary(model <- glm(wtr ~as.factor(gender)+age*medrely +income+as.factor(emp)+as.factor(racecat)+as.factor(dis), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+
+##helpfulness vs dis
+```{r}
+d %>% filter(!is.na(wtr)) %>% group_by(dis,helpful) %>% summarise(pct_willing=mean(wtr)*100)
+```
+
+##dis
+
+```{r}
+d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(),pct_willing=mean(wtr)*100)
+```
+
+##race
+```{r}
+d %>% filter(!is.na(wtr)) %>% group_by(racecat) %>% summarise(n=n(),pct_willing=mean(wtr)*100)
+```
+# try extra
+
+## special needs + old
+```{r}
+# special needs population
+#d %>% filter(!is.na(wtr)) %>% filter(!is.na(dis))%>% filter(dis!=1) %>% group_by(alt) %>% summarise(n=n(),pct_willing=mean(wtr)*100)  # the same thing
+d %>% filter(!is.na(wtr)) %>% filter(accom==1) %>% group_by(alt) %>% summarise(n=n(),pct_willing=mean(wtr)*100) 
+```
+```{r}
+# only people with dis or older than 65
+sn <- d %>% filter(accom==1|senior==1)
+```
+
+```{r}
+summary(model <- glm(wtr ~as.factor(senior) + as.factor(dis)+as.factor(gender)+income+ as.factor(emp)+as.factor(racecat), data = sn, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+## only people older than 65
+```{r}
+old <- d %>% filter(senior==1)
+```
+
+```{r}
+summary(model <- glm(wtr ~ as.factor(dis)+as.factor(gender)+income+ as.factor(emp)+as.factor(racecat), data = old, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+
+## PT dependence
+
+```{r}
+## if special needs populations are more heavily dependent upon public transportation
+summary(model <- glm(alt ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+#-------------
+#qualitative data
+```{r}
+#not willing to ride because of concerns over no human
+summary(model <- glm(concern_human ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+```{r}
+d %>% filter(!is.na(concern_human)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_human))
+```
+
+```{r}
+# riders with mobility disabilities are more likely to have negative feelings about AVs
+summary(model<- polr(as.factor(feel_senti) ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), Hess=T, data=d))
+st <- coef(summary(model))
+pval <- pnorm(abs(st[, "t value"]),lower.tail = FALSE)* 2
+st <- cbind(st, "p value" = round(pval,4))
+st
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+```
+```{r}
+d %>% filter(!is.na(feel_code_td)) %>% filter(!is.na(dis)) %>% ggplot()+
+  geom_histogram(aes(x=feel_code_td), binwidth = 0.8)+
+  facet_wrap(~dis)
+```
+```{r}
+d %>% filter(!is.na(feel_code_td)) %>% filter(!is.na(dis)) %>% filter(feel_code_td!=0) %>%ggplot()+
+  geom_histogram(aes(x=dis, fill=as.factor(feel_code_td)), position="fill",binwidth = 1)+
+  scale_fill_brewer(palette = "Paired")
 ```
