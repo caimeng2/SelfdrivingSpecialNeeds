@@ -5,11 +5,14 @@ date: "5/25/2020"
 output: html_document
 ---
 ```{r}
+library(MASS)
 library(readr)
 library(tidyverse)
 library(ggplot2)
 library(openxlsx)
-library(MASS)
+```
+```{r}
+mycolor <- c("#fd8d3c", "#b30000", "#fdd0a2", "#bdbdbd","#addd8e","#006837")
 ```
 
 #reading in data
@@ -507,17 +510,55 @@ d <- d %>% mutate(feel_senti=case_when(feel_code_td==1~1, feel_code_td==2~1, fee
 d$feel_senti[d$feel_senti==0] <- NA
 d %>% group_by(feel_senti) %>% count()
 ```
+##feel_less
+```{r}
+# feel less codes: 1=negative simple response, 2= safety concern, 3=cost concern, 4=neutral, 5= positive simple response, 6=benefits
+d <- d %>% mutate(feel_less=case_when(feel_code_td==1~1, feel_code_td==2~2, feel_code_td==3~2,feel_code_td==4~3, feel_code_td==5~4,feel_code_td==6~5, feel_code_td==7~6, feel_code_td==0~0))
+d$feel_less[d$feel_less==0] <- NA
+d %>% group_by(feel_less) %>% count()
+```
+
 ##concern_human
 ```{r}
-#not willing to ride because of prefer human driver
+#not willing to ride because of prefer human driver, interaction
 d <- d %>% mutate(concern_human=ifelse(concern_code_more==6, 1, 0)) 
 d$concern_human[is.na(d$concern_code_more) == TRUE] <- NA
-#altenatively code: Cost Concerns, job loss, lack of human interaction, societal impact, etc
-#d <- d %>% mutate(concern_human=ifelse(concern_code_td==4, 1, 0)) 
-#d$concern_human[is.na(d$concern_code_td) == TRUE] <- NA
 ```
+
+##concern_safety
 ```{r}
-d %>% group_by(concern_human) %>% count()
+#not willing to ride because of safety concerns, including tech concerns
+d <- d %>% mutate(concern_safety=ifelse(concern_code_more==3|concern_code_more==2|concern_code_more==4, 1, 0)) 
+d$concern_safety[is.na(d$concern_code_more) == TRUE] <- NA
+```
+##concern_tech
+```{r}
+#not willing to ride because of technological fears
+d <- d %>% mutate(concern_tech=ifelse(concern_code_more==2|concern_code_more==4|concern_code_more==8, 1, 0)) 
+d$concern_tech[is.na(d$concern_code_more) == TRUE] <- NA
+```
+##concern_other
+```{r}
+#not willing to ride for other reasons
+d <- d %>% mutate(concern_other=ifelse(concern_code_more==1|concern_code_more==5|concern_code_more==7|concern_code_more==9|concern_code_more==11|concern_code_more==16, 1, 0)) 
+d$concern_other[is.na(d$concern_code_more) == TRUE] <- NA
+```
+##concern_blank
+```{r}
+#not willing to ride but did not give reasons
+d <- d %>% mutate(concern_blank=ifelse(concern_code_more==0, 1, 0)) 
+d$concern_blank[is.na(d$concern_code_more) == TRUE] <- NA
+```
+
+##wtrno
+```{r}
+# a subset of not willing to ride
+wtrno <- d %>% filter(wtr==0)
+wtrno$concern_blank[is.na(wtrno$concern_blank)==T] <- 1 # one mismach blank
+wtrno$concern_human[is.na(wtrno$concern_human)==T] <- 0
+wtrno$concern_safety[is.na(wtrno$concern_safety)==T] <- 0
+wtrno$concern_tech[is.na(wtrno$concern_tech)==T] <- 0
+wtrno$concern_other[is.na(wtrno$concern_other)==T] <- 0
 ```
 
 #------------
@@ -567,118 +608,159 @@ mcfadden <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- l
 coxsnell <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector(1 - exp((2/N) * (LL0 - LLf)))}
 nagelkerke <- function(m) { m.null <- update(m, . ~ 1); LLf <- logLik(m); LL0 <- logLik(m.null); N <- length(resid(m)); as.vector((1 - exp((2/N) * (LL0 - LLf))) / (1 - exp(LL0)^(2/N)))}
 ```
+##Hypothesis 1: Bus riders who have special needs are more likely to reply on public transit than those who do not.
+
 ```{r}
-# control for demographics, test helpful, prof, skill, service, med, work, alt
-summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis)+alt, data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+d <- d %>% mutate(rely= 1-alt)
 ```
+```{r}
+summary(model <- glm(rely ~ as.factor(dis) + as.factor(gender) + age + income + as.factor(emp)+ as.factor(racecat), data = d, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+nobs(model)
+```
+
+```{r}
+d %>% filter(!is.na(alt)) %>% group_by(dis) %>% summarise(n=n(), pct_rely=round((1-mean(alt))*100, 2))
+```
+```{r}
+# average dependent on PT
+1-mean(d$alt, na.rm=T)
+```
+```{r}
+d  %>% group_by(alt) %>% summarise(n=n())
+```
+```{r}
+d %>% filter(!is.na(alt)) %>% group_by(accom,) %>% summarise(n=n(), pct_rely=1-mean(alt))
+```
+```{r}
+d %>% filter(accom==0) %>% group_by(alt) %>% summarise(n=n())
+```
+##Hypothesis 2: Bus riders who have special needs are more likely to be willing to use autonomous public transit than those who do not.
+
 ```{r}
 # demographics only
-summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+as.factor(dis), data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
-```
-
-```{r}
-# demographics only (seperate disabilities)
-summary(model <- glm(wtr ~ as.factor(gender)+senior+income+as.factor(emp)+as.factor(racecat)+ as.factor(blind)+as.factor(deaf)+ as.factor(mobility)+as.factor(psy)+as.factor(otherdis), data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
-```
-
-```{r}
-# disability & helpful interaction: nothing
-summary(model <- glm(wtr ~ as.factor(gender)+age+income+as.factor(emp)+as.factor(racecat)+ as.factor(dis)*helpful, data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
-```
-
-```{r}
-# replace age with senior
-# senior & helpful interaction: nothing
-summary(model <- glm(wtr ~as.factor(gender)+age*medrely +income+as.factor(emp)+as.factor(racecat)+as.factor(dis), data = d, family = binomial(logit)))
+summary(model <- glm(wtr ~ as.factor(dis)+ as.factor(gender) + age +income +as.factor(emp) +as.factor(racecat), data = d, family = binomial(logit)))
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 round(exp(coef(model)), 2)
-```
-
-##helpfulness vs dis
-```{r}
-d %>% filter(!is.na(wtr)) %>% group_by(dis,helpful) %>% summarise(pct_willing=mean(wtr)*100)
-```
-
-##dis
-
-```{r}
-d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(),pct_willing=mean(wtr)*100)
-```
-
-##race
-```{r}
-d %>% filter(!is.na(wtr)) %>% group_by(racecat) %>% summarise(n=n(),pct_willing=mean(wtr)*100)
-```
-# try extra
-
-## special needs + old
-```{r}
-# special needs population
-#d %>% filter(!is.na(wtr)) %>% filter(!is.na(dis))%>% filter(dis!=1) %>% group_by(alt) %>% summarise(n=n(),pct_willing=mean(wtr)*100)  # the same thing
-d %>% filter(!is.na(wtr)) %>% filter(accom==1) %>% group_by(alt) %>% summarise(n=n(),pct_willing=mean(wtr)*100) 
+nobs(model)
 ```
 ```{r}
-# only people with dis or older than 65
-sn <- d %>% filter(accom==1|senior==1)
-```
-
-```{r}
-summary(model <- glm(wtr ~as.factor(senior) + as.factor(dis)+as.factor(gender)+income+ as.factor(emp)+as.factor(racecat), data = sn, family = binomial(logit)))
+# rely only
+summary(model <- glm(wtr ~ as.factor(rely) , data = d, family = binomial(logit)))
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 round(exp(coef(model)), 2)
-```
-## only people older than 65
-```{r}
-old <- d %>% filter(senior==1)
+nobs(model)
 ```
 
 ```{r}
-summary(model <- glm(wtr ~ as.factor(dis)+as.factor(gender)+income+ as.factor(emp)+as.factor(racecat), data = old, family = binomial(logit)))
+# demographics + rely
+summary(model <- glm(wtr ~ as.factor(dis)+as.factor(gender) + age +income +as.factor(emp) +as.factor(racecat)+as.factor(rely), data = d, family = binomial(logit)))
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 round(exp(coef(model)), 2)
-```
-
-## PT dependence
-
-```{r}
-## if special needs populations are more heavily dependent upon public transportation
-summary(model <- glm(alt ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
-round(exp(coef(model)), 2)
-```
-#-------------
-#qualitative data
-```{r}
-#not willing to ride because of concerns over no human
-summary(model <- glm(concern_human ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), data = d, family = binomial(logit)))
-list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
-round(exp(coef(model)), 2)
-```
-```{r}
-d %>% filter(!is.na(concern_human)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_human))
+nobs(model)
 ```
 
 ```{r}
-# riders with mobility disabilities are more likely to have negative feelings about AVs
-summary(model<- polr(as.factor(feel_senti) ~ as.factor(dis) + age +as.factor(gender) +income+ as.factor(emp)+as.factor(racecat), Hess=T, data=d))
+d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(), pct_willing=round(mean(wtr)*100, 2))
+```
+```{r}
+mean(d$wtr,na.rm = T)
+```
+
+##Hypothesis 3: There is no difference in AV perceptions between bus riders with and without special needs.
+
+```{r}
+summary(model<- polr(as.factor(feel_senti) ~ as.factor(dis) + as.factor(gender) +age +income+ as.factor(emp)+as.factor(racecat), Hess=T, data=d))
 st <- coef(summary(model))
 pval <- pnorm(abs(st[, "t value"]),lower.tail = FALSE)* 2
 st <- cbind(st, "p value" = round(pval,4))
 st
 list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
 round(exp(coef(model)), 2)
+nobs(model)
 ```
 ```{r}
-d %>% filter(!is.na(feel_code_td)) %>% filter(!is.na(dis)) %>% ggplot()+
-  geom_histogram(aes(x=feel_code_td), binwidth = 0.8)+
-  facet_wrap(~dis)
+exp(-1.465360184)
 ```
 ```{r}
-d %>% filter(!is.na(feel_code_td)) %>% filter(!is.na(dis)) %>% filter(feel_code_td!=0) %>%ggplot()+
-  geom_histogram(aes(x=dis, fill=as.factor(feel_code_td)), position="fill",binwidth = 1)+
-  scale_fill_brewer(palette = "Paired")
+exp(-0.409787441)
+```
+```{r}
+summary(model<- polr(as.factor(feel_senti) ~ wtr, Hess=T, data=d))
+st <- coef(summary(model))
+pval <- pnorm(abs(st[, "t value"]),lower.tail = FALSE)* 2
+st <- cbind(st, "p value" = round(pval,4))
+st
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+nobs(model)
+```
+```{r}
+d %>% filter(!is.na(feel_less)) %>% filter(!is.na(dis)) %>%ggplot()+
+  geom_histogram(aes(x=dis, fill=as.factor(feel_less)),position="fill", binwidth = 1)+
+  scale_fill_manual(values=mycolor, labels= c("1"="Negative simple response", "2"="Safety concern", "3"="Cost concern",  "4"="Neutral or neutralized response","5"="Positive simple response", "6"="Benefits"))
+```
+
+```{r}
+d %>% filter(!is.na(feel_less)) %>% group_by(dis) %>% count(feel_less) %>% mutate(freq=n/sum(n))
+```
+
+```{r}
+d %>% filter(!is.na(feel_less)) %>% filter(accom==1) %>% group_by(feel_less)  %>% summarise(n=n()) %>% mutate(freq=n/sum(n))
+```
+
+##Hypothesis 4: There is no difference in concerns over AVs in terms of safety, absence of human interactions, and technological fear between bus riders with and without special needs
+```{r}
+count(wtrno)
+```
+```{r}
+wtrno %>% group_by(concern_safety) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+wtrno %>% group_by(concern_human) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+wtrno %>% group_by(concern_tech) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+wtrno %>% group_by(concern_other) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+wtrno %>% group_by(concern_blank) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+#not willing to ride because of concerns over safety
+summary(model <- glm(concern_safety ~ as.factor(dis) +as.factor(gender) + age +income+ as.factor(emp)+as.factor(racecat), data = wtrno, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+nobs(model)
+```
+
+```{r}
+wtrno %>% filter(!is.na(concern_safety)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_safety))
+```
+
+```{r}
+#not willing to ride because of concerns over no human
+summary(model <- glm(concern_human ~ as.factor(dis) +as.factor(gender) +age +income+ as.factor(emp)+as.factor(racecat), data = wtrno, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+nobs(model)
+```
+
+```{r}
+wtrno %>% filter(!is.na(concern_human)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_human))
+```
+
+```{r}
+#not willing to ride because of concerns over tech
+summary(model <- glm(concern_tech ~ as.factor(dis) +as.factor(gender) +age +income+ as.factor(emp)+as.factor(racecat), data = wtrno, family = binomial(logit)))
+list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(model))
+round(exp(coef(model)), 2)
+nobs(model)
+```
+
+```{r}
+wtrno %>% filter(!is.na(concern_tech)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_tech))
 ```
