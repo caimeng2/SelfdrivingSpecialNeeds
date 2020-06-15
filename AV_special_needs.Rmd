@@ -566,9 +566,6 @@ wtrno$concern_other[is.na(wtrno$concern_other)==T] <- 0
 ```{r}
 print(colSums(!is.na(d)))
 ```
-```{r}
-d %>% group_by(type) %>% count()
-```
 
 ```{r}
 varde<- function(data,variable){
@@ -666,6 +663,12 @@ d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(), pct_willing=rou
 ```
 ```{r}
 mean(d$wtr,na.rm = T)
+```
+```{r}
+d %>% filter(accom==1) %>% summarize(mean(wtr, na.rm = T))
+```
+```{r}
+d %>% filter(accom==0) %>% summarize(mean(wtr, na.rm = T))
 ```
 
 ##Hypothesis 3: There is no difference in AV perceptions between bus riders with and without special needs.
