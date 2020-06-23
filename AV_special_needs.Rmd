@@ -616,6 +616,12 @@ list(McFadden=mcfadden(model), CoxSnell=coxsnell(model), Nagelkerke=nagelkerke(m
 round(exp(coef(model)), 2)
 nobs(model)
 ```
+```{r}
+# probabilities
+plogis(1.19843) # vision impaired
+plogis(0.58743) # mobility restricted
+plogis(0.96339) # multiple needs
+```
 
 ```{r}
 d %>% filter(!is.na(alt)) %>% group_by(dis) %>% summarise(n=n(), pct_rely=round((1-mean(alt))*100, 2))
@@ -713,24 +719,31 @@ d %>% filter(!is.na(feel_less)) %>% group_by(dis) %>% count(feel_less) %>% mutat
 d %>% filter(!is.na(feel_less)) %>% filter(accom==1) %>% group_by(feel_less)  %>% summarise(n=n()) %>% mutate(freq=n/sum(n))
 ```
 
+```{r}
+d %>% filter(!is.na(feel_less)) %>% filter(accom==1) %>% group_by(dis, feel_less)  %>% summarise(n=n()) 
+```
+
 ##Hypothesis 4: There is no difference in concerns over AVs in terms of safety, absence of human interactions, and technological fear between bus riders with and without special needs
 ```{r}
 count(wtrno)
 ```
 ```{r}
-wtrno %>% group_by(concern_safety) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+wtrno %>% filter(accom==1) %>% group_by(concern_safety) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
 ```
 ```{r}
-wtrno %>% group_by(concern_human) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+wtrno %>% filter(accom==1) %>% group_by(concern_human) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
 ```
 ```{r}
-wtrno %>% group_by(concern_tech) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+wtrno %>% filter(accom==1) %>% group_by(concern_tech) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
 ```
 ```{r}
-wtrno %>% group_by(concern_other) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+wtrno %>% filter(accom==1)%>% group_by(concern_other) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
 ```
 ```{r}
 wtrno %>% group_by(concern_blank) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
+```
+```{r}
+wtrno %>% filter(accom==1) %>% group_by(concern_blank) %>% summarise(n=n()) %>% mutate(freq=round(n/sum(n)*100,2))
 ```
 ```{r}
 #not willing to ride because of concerns over safety
