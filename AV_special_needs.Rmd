@@ -597,6 +597,31 @@ varde(d, medrely)
 ```{r}
 varde(d, workrely)
 ```
+```{r}
+vardea <- function(data, accom_variable, variable){
+  data %>% filter(!is.na({{variable}})) %>%filter(!is.na({{accom_variable}})) %>% group_by({{accom_variable}}, {{variable}}) %>% summarise(n=n()) %>% mutate(freq=round((n/sum(n)*100),2))
+  }
+```
+```{r}
+d %>% filter(!is.na(gender)) %>% group_by(accom,gender) %>% summarise(n=n()) %>% mutate(freq=round((n/sum(n)*100),2))
+```
+```{r}
+vardea(d, accom, gender)
+```
+```{r}
+vardea(d, accom, age)
+```
+```{r}
+vardea(d, accom, income)
+```
+```{r}
+vardea(d, accom, emp)
+```
+
+```{r}
+vardea(d, accom, race)
+```
+
 #------------
 #stats
 
