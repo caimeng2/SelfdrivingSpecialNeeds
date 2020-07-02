@@ -494,6 +494,7 @@ d$medrely[is.na(d$alt) == TRUE] <- NA
 ```{r}
 #write.xlsx(d, file = "av_special_needs_withdis.xlsx")
 ```
+
 #------------
 #open-ends coding
 
@@ -805,3 +806,13 @@ nobs(model)
 ```{r}
 wtrno %>% filter(!is.na(concern_tech)) %>% group_by(dis) %>% summarize(n=n(), mean(concern_tech))
 ```
+
+#------------
+#dataset to submit
+
+```{r}
+dataset <- d %>% mutate(employment=emp, special_needs=dis) %>% select(rely, feel, wtr, concern, employment, gender, age, income, race, special_needs)
+glimpse(dataset)
+write.xlsx(dataset, file = "dataset.xlsx")
+```
+
