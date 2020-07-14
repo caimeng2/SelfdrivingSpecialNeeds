@@ -293,15 +293,15 @@ FR1 <- FR1 %>% mutate(income=as.numeric(Q26))
 ##race & racecat
 ```{r}
 #race: 1=black, 2=asian, 3=white, 4=hispanic, 5=native american, 6=pacific islander, 7=other
-#racecat: 1=black, 3=white, 4=hispanic, 7=other
+#racecat: 1=black, 3=white, 7=other (including hispanic)
 DR1 <- DR1 %>% mutate(race=as.numeric(Q31))
-DR1 <- DR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
+DR1 <- DR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~7, race==5~7,race==6~7,race==7~7))
 
 DR2 <- DR2 %>% mutate(race=as.numeric(Q39))
-DR2 <- DR2 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
+DR2 <- DR2 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~7, race==5~7,race==6~7,race==7~7))
 
 FR1 <- FR1 %>% mutate(race=as.numeric(Q27))
-FR1 <- FR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~4, race==5~7,race==6~7,race==7~7))
+FR1 <- FR1 %>% mutate(racecat=case_when(race==1~1, race==2~7, race==3~3, race==4~7, race==5~7,race==6~7,race==7~7))
 ```
 
 ##accom
@@ -856,7 +856,8 @@ nobs(model)
 #dataset to submit
 
 ```{r}
-dataset <- d %>% mutate(employment=emp, special_needs=dis) %>% select(rely, feel, wtr, concern, employment, gender, age, income, race, special_needs)
+dataset <- d %>% mutate(employment=emp, special_needs=dis) %>% mutate(race2=case_when(race==1~1, race==2~2, race==3~3, race==4~6, race==5~4,race==6~5,race==7~6)) # put hispanic into other (suggested by Z)
+dataset <- dataset %>% select(rely, feel, wtr, concern, employment, gender, age, income, race2, special_needs) %>% rename(race = race2)
 glimpse(dataset)
 write.xlsx(dataset, file = "dataset.xlsx")
 ```
