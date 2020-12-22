@@ -650,7 +650,7 @@ plogis(0.96339) # multiple needs
 ```
 
 ```{r}
-d %>% filter(!is.na(alt)) %>% group_by(dis) %>% summarise(n=n(), pct_rely=round((1-mean(alt))*100, 2))
+d %>% filter(!is.na(alt)) %>% group_by(dis) %>% summarise(n=n(), pct_rely=round((1-mean(alt))*100, 2)) %>% mutate(count_rely=round(pct_rely*n/100,2))
 ```
 ```{r}
 # average dependent on PT
@@ -698,8 +698,12 @@ nobs(model)
 ```
 
 ```{r}
-d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(), pct_willing=round(mean(wtr)*100, 2))
+d %>% filter(!is.na(wtr)) %>% group_by(dis) %>% summarise(n=n(), pct_willing=round(mean(wtr)*100, 2)) %>% mutate(count_willing=round(pct_willing*n/100,2))
 ```
+```{r}
+d %>% group_by(dis) %>% summarize(n=n())
+```
+
 ```{r}
 mean(d$wtr,na.rm = T)
 ```
@@ -747,9 +751,21 @@ round(exp(coef(model)), 2)
 nobs(model)
 ```
 ```{r}
-d %>% filter(!is.na(feel_less)) %>% filter(!is.na(dis)) %>%ggplot()+
-  geom_histogram(aes(x=dis, fill=as.factor(feel_less)),position="fill", binwidth = 1)+
-  scale_fill_manual(values=mycolor, labels= c("1"="Negative simple response", "2"="Safety concern", "3"="Cost concern",  "4"="Neutral or neutralized response","5"="Positive simple response", "6"="Benefits"))
+mycolor = c("grey95", "grey80", "grey60", "grey45", "grey30", "grey15")
+```
+
+```{r}
+d %>% filter(!is.na(feel_less)) %>% filter(!is.na(dis)) %>% ggplot()+
+  theme_minimal()+
+  theme(panel.grid.major.x = element_blank(), legend.position ="bottom")+
+  geom_histogram(aes(x=factor(dis, levels=c(1,7,6,5,4,3,2)), fill=as.factor(feel_less)),stat="count",position="fill")+
+  scale_fill_manual(values=mycolor,name="", labels= c("1"="Negative simple response", "2"="Safety concern", "3"="Cost concern",  "4"="Neutral or neutralized response","5"="Positive simple response", "6"="Benefits"))+
+  scale_x_discrete(name = "", labels=c("1"="No special needs", "2"="Blindness/ visual impairment", "3"="Deaf/ hard of hearing",  "4"="Mobility disabilities","5"="Psychiatric disabilities", "6"="Other accommodation needs", "7"="Multiple accommodation needs"))+
+  scale_y_continuous(name="Percentage of respondents", labels = scales::label_percent(accuracy = 1L))+
+  coord_flip()
+```
+```{r}
+ggsave("concerns.png", width = 8, height = 5)
 ```
 
 ```{r}
@@ -859,6 +875,6 @@ nobs(model)
 dataset <- d %>% mutate(employment=emp, special_needs=dis) %>% mutate(race2=case_when(race==1~1, race==2~2, race==3~3, race==4~6, race==5~4,race==6~5,race==7~6)) # put hispanic into other (suggested by Z)
 dataset <- dataset %>% select(rely, feel, wtr, concern, employment, gender, age, income, race2, special_needs) %>% rename(race = race2)
 glimpse(dataset)
-write.xlsx(dataset, file = "dataset.xlsx")
+#write.xlsx(dataset, file = "dataset.xlsx")
 ```
 
