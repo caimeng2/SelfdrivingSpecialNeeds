@@ -6,7 +6,7 @@ Large mobility gaps exist between people with and without disabilities. People w
 
 ### Keywords
 
-Autonomous public transit, Special needsPerception, Willingness to ride, Mobility restricted, Visual impaired
+Autonomous public transit, Special needs, Perception, Willingness to ride, Mobility restricted, Visual impaired
 
 ### DOI
 
